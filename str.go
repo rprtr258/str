@@ -29,7 +29,7 @@ func (s Str) String() string {
 }
 
 func (s Str) Slice(from, to int) Str {
-	assert(from < to, "invalid slice indices")
+	assert(from <= to, "invalid slice indices")
 
 	start := uintptr(s.Base)
 	return Str{Base: unsafe.Pointer(start + uintptr(from)), Len: to - from}
