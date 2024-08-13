@@ -1,6 +1,7 @@
 package str
 
 import (
+	"iter"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -128,7 +129,7 @@ func CutSuffix(s, suffix Str) (before Str, found bool) {
 //
 // FieldsFunc makes no guarantees about the order in which it calls f(c)
 // and assumes that f always returns the same value for a given c.
-func FieldsFunc(s Str, f func(rune) bool) Iterator {
+func FieldsFunc(s Str, f func(rune) bool) iter.Seq[Str] {
 	return func(yield func(Str) bool) {
 		// Find the field start and end indices.
 		// Doing this in a separate pass (rather than slicing the string s
@@ -167,7 +168,7 @@ var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 // Fields splits the string s around each instance of one or more consecutive white space
 // characters, as defined by unicode.IsSpace, returning a slice of substrings of s or an
 // empty slice if s contains only white space.
-func Fields(s Str) Iterator {
+func Fields(s Str) iter.Seq[Str] {
 	// First count the fields.
 	// This is an exact count if s is ASCII, otherwise it is an approximation.
 	n := 0
@@ -237,7 +238,7 @@ func Count(s, substr Str) int {
 // explode splits s into a slice of UTF-8 strings,
 // one string per Unicode character up to a maximum of n (n < 0 means no limit).
 // Invalid UTF-8 bytes are sliced individually.
-func explode(s Str, n int) Iterator {
+func explode(s Str, n int) iter.Seq[Str] {
 	l := utf8.RuneCountInString(s.String())
 	if n < 0 || n > l {
 		n = l

@@ -1,10 +1,12 @@
 package str
 
+import "iter"
+
 // Generic split: splits after each instance of sep,
 // including sepSave bytes of sep in the subarrays.
-func genSplit(s, sep Str, sepSave, n int) Iterator {
+func genSplit(s, sep Str, sepSave, n int) iter.Seq[Str] {
 	if n == 0 {
-		return EmptyIterator
+		return nil
 	}
 
 	if sep.Len == 0 {
@@ -47,7 +49,7 @@ func genSplit(s, sep Str, sepSave, n int) Iterator {
 // as described in the documentation for [Split].
 //
 // To split around the first instance of a separator, see Cut.
-func SplitN(s, sep Str, n int) Iterator { return genSplit(s, sep, 0, n) }
+func SplitN(s, sep Str, n int) iter.Seq[Str] { return genSplit(s, sep, 0, n) }
 
 // SplitAfterN slices s into substrings after each instance of sep and
 // returns a slice of those substrings.
@@ -60,7 +62,7 @@ func SplitN(s, sep Str, n int) Iterator { return genSplit(s, sep, 0, n) }
 //
 // Edge cases for s and sep (for example, empty strings) are handled
 // as described in the documentation for SplitAfter.
-func SplitAfterN(s, sep Str, n int) Iterator { return genSplit(s, sep, sep.Len, n) }
+func SplitAfterN(s, sep Str, n int) iter.Seq[Str] { return genSplit(s, sep, sep.Len, n) }
 
 // Split slices s into all substrings separated by sep and returns a slice of
 // the substrings between those separators.
@@ -74,7 +76,7 @@ func SplitAfterN(s, sep Str, n int) Iterator { return genSplit(s, sep, sep.Len, 
 // It is equivalent to [SplitN] with a count of -1.
 //
 // To split around the first instance of a separator, see Cut.
-func Split(s, sep Str) Iterator { return genSplit(s, sep, 0, -1) }
+func Split(s, sep Str) iter.Seq[Str] { return genSplit(s, sep, 0, -1) }
 
 // SplitAfter slices s into all substrings after each instance of sep and
 // returns a slice of those substrings.
@@ -86,4 +88,4 @@ func Split(s, sep Str) Iterator { return genSplit(s, sep, 0, -1) }
 // both s and sep are empty, SplitAfter returns an empty slice.
 //
 // It is equivalent to [SplitAfterN] with a count of -1.
-func SplitAfter(s, sep Str) Iterator { return genSplit(s, sep, sep.Len, -1) }
+func SplitAfter(s, sep Str) iter.Seq[Str] { return genSplit(s, sep, sep.Len, -1) }

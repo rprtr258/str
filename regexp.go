@@ -2,7 +2,10 @@ package str
 
 // TODO: lots of allocations, (*Regexp).allMatches is not available
 
-import "regexp"
+import (
+	"iter"
+	"regexp"
+)
 
 // Regexp is a wrapper around regexp.Regexp
 type Regexp struct{ regexp.Regexp }
@@ -62,7 +65,7 @@ func (re *Regexp) FindSubmatchIndex(b []byte) ([2]int, bool) {
 // its subexpressions, as defined by the 'Submatch' description in the
 // package comment.
 // A return value of nil indicates no match.
-func (re *Regexp) FindStringSubmatch(s Str) Iterator {
+func (re *Regexp) FindStringSubmatch(s Str) iter.Seq[Str] {
 	return func(yield func(Str) bool) {
 		for _, loc := range re.FindAllStringSubmatchIndex(s.String(), -1) {
 			if !yield(s.Slice(loc[0], loc[1])) {

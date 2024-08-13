@@ -1,6 +1,9 @@
 package str
 
-import "unsafe"
+import (
+	"iter"
+	"unsafe"
+)
 
 type Str struct {
 	Base unsafe.Pointer
@@ -45,6 +48,16 @@ func (s Str) SliceTo(to int) Str {
 
 func (s Str) asBytes() []byte {
 	return unsafe.Slice((*byte)(s.Base), s.Len)
+}
+
+func (s Str) Bytes() iter.Seq[byte] {
+	return func(yield func(byte) bool) {
+		for i := 0; i < s.Len; i++ {
+			if !yield(s.Get(i)) {
+				break
+			}
+		}
+	}
 }
 
 func (s Str) Get(i int) byte {
