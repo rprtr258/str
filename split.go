@@ -1,6 +1,31 @@
 package str
 
-import "iter"
+import (
+	"iter"
+	"unicode/utf8"
+)
+
+// explode splits s into a slice of UTF-8 strings,
+// one string per Unicode character up to a maximum of n (n < 0 means no limit).
+// Invalid UTF-8 bytes are sliced individually.
+func explode(s Str, n int) iter.Seq[Str] {
+	l := utf8.RuneCount(s.asBytes())
+	if n < 0 || n > l {
+		n = l
+	}
+	return func(yield func(Str) bool) {
+		for range n - 1 {
+			_, size := utf8.DecodeRuneInString(s.String())
+			if !yield(s.SliceTo(size)) {
+				return
+			}
+			s = s.SliceFrom(size)
+		}
+		if n > 0 {
+			yield(s)
+		}
+	}
+}
 
 // Generic split: splits after each instance of sep,
 // including sepSave bytes of sep in the subarrays.
@@ -20,8 +45,7 @@ func genSplit(s, sep Str, sepSave, n int) iter.Seq[Str] {
 	return func(yield func(Str) bool) {
 		n = min(n, s.Len+1)
 		n--
-		i := 0
-		for i < n {
+		for range n {
 			m := Index(s, sep)
 			if m < 0 {
 				break
@@ -30,7 +54,6 @@ func genSplit(s, sep Str, sepSave, n int) iter.Seq[Str] {
 				return
 			}
 			s = s.SliceFrom(m + sep.Len)
-			i++
 		}
 		yield(s)
 	}

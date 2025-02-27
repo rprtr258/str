@@ -210,7 +210,7 @@ func TrimSpace(s Str) Str {
 			// slower unicode-aware method on the remaining bytes
 			return TrimFunc(s.SliceFrom(start), unicode.IsSpace)
 		}
-		if asciiSpace[c] == 0 {
+		if !asciiSpace[c] {
 			break
 		}
 	}
@@ -223,7 +223,7 @@ func TrimSpace(s Str) Str {
 			// start has been already trimmed above, should trim end only
 			return TrimRightFunc(s.Slice(start, stop), unicode.IsSpace)
 		}
-		if asciiSpace[c] == 0 {
+		if !asciiSpace[c] {
 			break
 		}
 	}

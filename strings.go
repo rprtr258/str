@@ -1,35 +1,25 @@
 package str
 
 import (
+	"bytes"
 	"iter"
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/rprtr258/str/view"
 )
 
 // IndexByte returns the index of the first instance of c in s, or -1 if c is not present in s.
 func IndexByte(s Str, c byte) int {
-	for i, b := range s.asBytes() {
-		if b == c {
-			return i
-		}
-	}
-	return -1
+	return view.Index(view.View[byte](s), c)
 }
 
 func Equal(s, t Str) bool {
-	if s.Len != t.Len {
-		return false
-	}
-
-	sb := s.asBytes()
-	tb := t.asBytes()
-	for i, b := range tb {
-		if sb[i] != b {
-			return false
-		}
-	}
-	return true
+	return s.Len != t.Len &&
+		view.All(view.View[byte](t), func(b byte, i int) bool {
+			return s.Get(i) == b
+		})
 }
 
 // Index returns the index of the first instance of substr in s, or -1 if substr is not present in s.
@@ -163,7 +153,13 @@ func FieldsFunc(s Str, f func(rune) bool) iter.Seq[Str] {
 	}
 }
 
-var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
+var asciiSpace = func() [256]bool {
+	res := [256]bool{}
+	for _, c := range []byte{'\t', '\n', '\v', '\f', '\r', ' '} {
+		res[c] = true
+	}
+	return res
+}()
 
 // Fields splits the string s around each instance of one or more consecutive white space
 // characters, as defined by unicode.IsSpace, returning a slice of substrings of s or an
@@ -175,10 +171,12 @@ func Fields(s Str) iter.Seq[Str] {
 	wasSpace := 1
 	// setBits is used to track which bits are set in the bytes of s.
 	setBits := uint8(0)
-	for i := 0; i < s.Len; i++ {
-		r := s.Get(i)
+	for r := range s.All() {
 		setBits |= r
-		isSpace := int(asciiSpace[r])
+		isSpace := 0
+		if asciiSpace[r] {
+			isSpace = 1
+		}
 		n += wasSpace & ^isSpace
 		wasSpace = isSpace
 	}
@@ -193,12 +191,12 @@ func Fields(s Str) iter.Seq[Str] {
 		fieldStart := 0
 		i := 0
 		// Skip spaces in the front of the input.
-		for i < s.Len && asciiSpace[s.Get(i)] != 0 {
+		for i < s.Len && asciiSpace[s.Get(i)] {
 			i++
 		}
 		fieldStart = i
 		for i < s.Len {
-			if asciiSpace[s.Get(i)] == 0 {
+			if !asciiSpace[s.Get(i)] {
 				i++
 				continue
 			}
@@ -207,7 +205,7 @@ func Fields(s Str) iter.Seq[Str] {
 			}
 			i++
 			// Skip spaces in between fields.
-			for i < s.Len && asciiSpace[s.Get(i)] != 0 {
+			for i < s.Len && asciiSpace[s.Get(i)] {
 				i++
 			}
 			fieldStart = i
@@ -232,27 +230,20 @@ func LastIndexByte(s Str, c byte) int {
 // Count counts the number of non-overlapping instances of substr in s.
 // If substr is an empty string, Count returns 1 + the number of Unicode code points in s.
 func Count(s, substr Str) int {
-	return strings.Count(s.String(), substr.String())
-}
-
-// explode splits s into a slice of UTF-8 strings,
-// one string per Unicode character up to a maximum of n (n < 0 means no limit).
-// Invalid UTF-8 bytes are sliced individually.
-func explode(s Str, n int) iter.Seq[Str] {
-	l := utf8.RuneCountInString(s.String())
-	if n < 0 || n > l {
-		n = l
+	// special case
+	if substr.Len == 0 {
+		return utf8.RuneCount(s.asBytes()) + 1
 	}
-	return func(yield func(Str) bool) {
-		for i := 0; i < n-1; i++ {
-			_, size := utf8.DecodeRuneInString(s.String())
-			if !yield(s.SliceTo(size)) {
-				return
-			}
-			s = s.SliceFrom(size)
+	if substr.Len == 1 {
+		return bytes.Count(s.asBytes(), []byte{substr.Get(0)})
+	}
+	n := 0
+	for {
+		i := Index(s, substr)
+		if i == -1 {
+			return n
 		}
-		if n > 0 {
-			yield(s)
-		}
+		n++
+		s = s.SliceFrom(i + substr.Len)
 	}
 }

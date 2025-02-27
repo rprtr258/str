@@ -56,8 +56,47 @@ func (s View[T]) All() iter.Seq[T] {
 	}
 }
 
+func (s View[T]) unsafeGet(i int) T {
+	return s.AsSlice()[i]
+}
+
 func (s View[T]) Get(i int) T {
 	Assert(0 <= i && i < s.Len, "index out of bounds")
+	return s.unsafeGet(i)
+}
 
-	return s.AsSlice()[i]
+func Any[T any](v View[T], f func(T, int) bool) bool {
+	for i := range v.Len {
+		if f(v.unsafeGet(i), i) {
+			return true
+		}
+	}
+	return false
+}
+
+func All[T any](v View[T], f func(T, int) bool) bool {
+	for i := range v.Len {
+		if !f(v.unsafeGet(i), i) {
+			return false
+		}
+	}
+	return true
+}
+
+func IndexFunc[T any](v View[T], f func(T, int) bool) int {
+	for i := range v.Len {
+		if f(v.unsafeGet(i), i) {
+			return i
+		}
+	}
+	return -1
+}
+
+func Index[T comparable](v View[T], t T) int {
+	for i := range v.Len {
+		if v.unsafeGet(i) == t {
+			return i
+		}
+	}
+	return -1
 }
