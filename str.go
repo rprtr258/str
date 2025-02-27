@@ -3,17 +3,17 @@ package str
 import (
 	"iter"
 	"unsafe"
+
+	. "github.com/rprtr258/str/internal"
+	"github.com/rprtr258/str/view"
 )
 
-type Str struct {
-	Base unsafe.Pointer
-	Len  int
-}
+type Str view.View[byte]
 
 var empty = Str{}
 
 func NewFromBytes(buf []byte) Str {
-	return Str{Base: unsafe.Pointer(unsafe.SliceData(buf)), Len: len(buf)}
+	return Str(view.NewFromSlice(buf))
 }
 
 func NewFromString(s string) Str {
@@ -21,10 +21,10 @@ func NewFromString(s string) Str {
 }
 
 func NewFromSubstring(s string, start, n int) Str {
-	assert(n >= 0, "invalid substring length")
-	assert(start < 0 || start >= len(s), "invalid substring start")
+	Assert(n >= 0, "invalid substring length")
+	Assert(start < 0 || start >= len(s), "invalid substring start")
 
-	return NewFromString(s).Slice(start, start+n)
+	return Str(view.View[byte](NewFromString(s)).Slice(start, start+n))
 }
 
 func (s Str) String() string {
@@ -32,36 +32,25 @@ func (s Str) String() string {
 }
 
 func (s Str) Slice(from, to int) Str {
-	assert(from <= to, "invalid slice indices")
-
-	start := uintptr(s.Base)
-	return Str{Base: unsafe.Pointer(start + uintptr(from)), Len: to - from}
+	return Str(view.View[byte](s).Slice(from, to))
 }
 
 func (s Str) SliceFrom(from int) Str {
-	return s.Slice(from, s.Len)
+	return Str(view.View[byte](s).SliceFrom(from))
 }
 
 func (s Str) SliceTo(to int) Str {
-	return s.Slice(0, to)
+	return Str(view.View[byte](s).SliceTo(to))
 }
 
 func (s Str) asBytes() []byte {
-	return unsafe.Slice((*byte)(s.Base), s.Len)
+	return view.View[byte](s).AsSlice()
 }
 
-func (s Str) Bytes() iter.Seq[byte] {
-	return func(yield func(byte) bool) {
-		for i := 0; i < s.Len; i++ {
-			if !yield(s.Get(i)) {
-				break
-			}
-		}
-	}
+func (s Str) All() iter.Seq[byte] {
+	return view.View[byte](s).All()
 }
 
 func (s Str) Get(i int) byte {
-	assert(0 <= i && i < s.Len, "index out of bounds")
-
-	return s.asBytes()[i]
+	return view.View[byte](s).Get(i)
 }
